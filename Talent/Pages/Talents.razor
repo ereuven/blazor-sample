@@ -1,0 +1,24 @@
+﻿@page "/talents"
+@using Talent.Services
+@inject ITalentService TalentService
+
+<h3>Talents</h3>
+
+<Virtualize Context="talent" ItemsProvider="@LoadTalents">
+    <TalentComponent Data="talent"></TalentComponent>
+</Virtualize>
+
+@code {
+    private async ValueTask<ItemsProviderResult<Data.Talent>> LoadTalents(ItemsProviderRequest request)
+    {
+        (var talents, var total) = await TalentService.GetTalents(request.StartIndex, request.Count, request.CancellationToken);
+
+        //var numEmployees = Math.Min(request.Count, totalEmployees - request.StartIndex);
+        //var employees = await EmployeesService.GetEmployeesAsync(request.StartIndex,
+        //    numEmployees, request.CancellationToken);
+
+        //return new ItemsProviderResult<Employee>(employees, totalEmployees);
+
+        return new ItemsProviderResult<Data.Talent>(talents, (int)total);
+    }
+}
