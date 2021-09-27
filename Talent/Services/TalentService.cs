@@ -9,7 +9,8 @@ namespace Talent.Services
 {
     public interface ITalentService
     {
-        Task<(IEnumerable<Data.Talent>, long)> GetTalents(int startIndex = 0, int count = 100, CancellationToken cancellationToken = default);
+        Task<IList<Data.Talent>> GetTalents(FilterDefinition<Data.Talent> filter, int startIndex = 0, int count = 100, CancellationToken cancellationToken = default);
+        Task<long> CountTalents(FilterDefinition<Data.Talent> filter, CancellationToken cancellationToken=default);
     }
 
     public class TalentService : ITalentService
@@ -21,9 +22,15 @@ namespace Talent.Services
             _mongo = mongo;
         }
 
-        public async Task<(IEnumerable<Data.Talent>, long)> GetTalents(int startIndex, int count, CancellationToken cancellationToken)
+        public async Task<long> CountTalents(FilterDefinition<Data.Talent> filter, CancellationToken cancellationToken)
         {
-            var resultTask = _mongo.Talents.FindAsync(_mongo.Talents.Filter().Empty, new FindOptions<Data.Talent, Data.Talent>
+            var count = await _mongo.Talents.CountDocumentsAsync(filter, cancellationToken: cancellationToken);
+            return count;
+        }
+
+        public async Task<IList<Data.Talent>> GetTalents(FilterDefinition<Data.Talent> filter, int startIndex, int count, CancellationToken cancellationToken)
+        {
+            var result = await _mongo.Talents.FindAsync(filter, new FindOptions<Data.Talent, Data.Talent>
             {
                 Skip = startIndex,
                 Limit = count,
@@ -31,7 +38,7 @@ namespace Talent.Services
             }, cancellationToken);
 
 
-            return ((await resultTask).ToEnumerable(), await _mongo.Talents.CountDocumentsAsync(_mongo.Talents.Filter().Empty, cancellationToken: cancellationToken));
+            return await result.ToListAsync(cancellationToken);
         }
     }
 }

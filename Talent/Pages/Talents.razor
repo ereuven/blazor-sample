@@ -1,17 +1,40 @@
 ﻿@page "/talents"
 @using Talent.Services
+@using MongoDB.Driver; 
 @inject ITalentService TalentService
 
 <h3>Talents</h3>
+<input placeholder="Enter your text" @onchange="@OnTextFilterChanges"/>
 
-<Virtualize Context="talent" ItemsProvider="@LoadTalents">
-    <TalentComponent Data="talent"></TalentComponent>
-</Virtualize>
+<div style="max-height:70vh; overflow:auto;">
+    <Virtualize Context="talent" ItemsProvider="@LoadTalents" OverscanCount="5" @ref="TalentsList">
+        <ItemContent>
+            <TalentComponent Data="talent"></TalentComponent>
+        </ItemContent>
+        <Placeholder>
+            Loading... &hellip
+        </Placeholder>
+    </Virtualize>
+</div>
 
 @code {
+    private Virtualize<Data.Talent> TalentsList { get; set; }
+    private string _filterTextValue = string.Empty;
+
+    private async Task OnTextFilterChanges(ChangeEventArgs args)
+    {
+        _filterTextValue= (string)(args.Value ?? string.Empty);
+        await TalentsList.RefreshDataAsync();
+    }
+
     private async ValueTask<ItemsProviderResult<Data.Talent>> LoadTalents(ItemsProviderRequest request)
     {
-        (var talents, var total) = await TalentService.GetTalents(request.StartIndex, request.Count, request.CancellationToken);
+        var filter = Builders<Data.Talent>.Filter.Where(t => t.FirstName.Contains(_filterTextValue) || t.LastName.Contains(_filterTextValue));
+        int totalTalents = (int)await TalentService.CountTalents(filter, request.CancellationToken);
+
+        var numTalents = Math.Min(request.Count, totalTalents - request.StartIndex);
+
+        var talents = await TalentService.GetTalents(filter, request.StartIndex, numTalents, request.CancellationToken);
 
         //var numEmployees = Math.Min(request.Count, totalEmployees - request.StartIndex);
         //var employees = await EmployeesService.GetEmployeesAsync(request.StartIndex,
@@ -19,6 +42,6 @@
 
         //return new ItemsProviderResult<Employee>(employees, totalEmployees);
 
-        return new ItemsProviderResult<Data.Talent>(talents, (int)total);
+        return new ItemsProviderResult<Data.Talent>(talents, totalTalents);
     }
 }
