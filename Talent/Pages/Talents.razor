@@ -12,7 +12,7 @@
             <TalentComponent Data="talent"></TalentComponent>
         </ItemContent>
         <Placeholder>
-            Loading... &hellip
+            Loading...
         </Placeholder>
     </Virtualize>
 </div>
@@ -35,12 +35,6 @@
         var numTalents = Math.Min(request.Count, totalTalents - request.StartIndex);
 
         var talents = await TalentService.GetTalents(filter, request.StartIndex, numTalents, request.CancellationToken);
-
-        //var numEmployees = Math.Min(request.Count, totalEmployees - request.StartIndex);
-        //var employees = await EmployeesService.GetEmployeesAsync(request.StartIndex,
-        //    numEmployees, request.CancellationToken);
-
-        //return new ItemsProviderResult<Employee>(employees, totalEmployees);
 
         return new ItemsProviderResult<Data.Talent>(talents, totalTalents);
     }
